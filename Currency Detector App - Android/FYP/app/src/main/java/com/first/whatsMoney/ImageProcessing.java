@@ -1,10 +1,9 @@
-package com.first.fyp;
+package com.first.whatsMoney;
 
 import android.annotation.SuppressLint;
 import android.content.res.AssetFileDescriptor;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
-import android.widget.ImageButton;
 
 import org.tensorflow.lite.Interpreter;
 

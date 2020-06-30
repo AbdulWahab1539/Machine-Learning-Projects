@@ -14,32 +14,11 @@
         android:id="@+id/button3"
         android:layout_width="60dp"
         android:layout_height="60dp"
-        android:layout_marginBottom="20dp"
+        android:layout_marginBottom="45dp"
         android:background="@drawable/shutter"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
-
-    <Button
-        android:id="@+id/button4"
-        android:layout_width="60dp"
-        android:layout_height="60dp"
-        android:layout_marginBottom="20dp"
-        android:background="@drawable/microphone2"
-        android:visibility="visible"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/button3" />
-    <com.airbnb.lottie.LottieAnimationView
-        android:id="@+id/lottieAnimationView"
-        android:layout_width="60dp"
-        android:layout_height="60dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="parent"
-        app:layout_constraintStart_toStartOf="@id/button3"
-        app:lottie_fileName="ripple-loading-animation.json"
-        android:layout_marginBottom="20dp"
-        app:lottie_autoPlay="false" />
 
     <com.wonderkiln.camerakit.CameraView
         android:id="@+id/cameraView"
@@ -48,10 +27,25 @@
         app:ckFacing="back"
         app:ckFlash="auto"
         app:ckFocus="continuous"
+        android:keepScreenOn="true"
+        android:hapticFeedbackEnabled="true"
+        android:saveEnabled="true"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+    
+    <com.airbnb.lottie.LottieAnimationView
+        android:id="@+id/lottie_animation"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        app:lottie_fileName="microphone.json"
+        app:lottie_autoPlay="false"
+        app:lottie_loop="true"
+        android:visibility="visible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/button3"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
 

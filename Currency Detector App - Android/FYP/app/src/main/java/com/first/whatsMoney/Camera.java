@@ -1,16 +1,17 @@
-package com.first.fyp;
+package com.first.whatsMoney;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.os.Environment;
 import android.os.Handler;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
@@ -29,6 +30,12 @@ import com.wonderkiln.camerakit.CameraKitImage;
 import com.wonderkiln.camerakit.CameraKitVideo;
 import com.wonderkiln.camerakit.CameraView;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.Executor;
@@ -36,7 +43,7 @@ import java.util.concurrent.Executors;
 
 public class Camera extends AppCompatActivity implements TextToSpeech.OnInitListener{
 
-    private static final String MODEL_PATH = "notespkr.tflite";
+    private static final String MODEL_PATH = "notespkr128.tflite";
     private static final boolean QUANT = false;
     private static final String LABEL_PATH = "labelscash.txt";
     private static final int INPUT_SIZE = 224;
@@ -50,19 +57,17 @@ public class Camera extends AppCompatActivity implements TextToSpeech.OnInitList
     private Executor executor = Executors.newSingleThreadExecutor();
     private Button btnDetectObject;
     private CameraView cameraView;
-    private Button micButton;
-    //private LottieAnimationView lottieAnimationView;
-    Bitmap bitmap;
+    private LottieAnimationView micButton;
+    Bitmap bitmap,sendBitmap;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera);
 
         cameraView = findViewById(R.id.cameraView);
-        // btnToggleCamera = findViewById(R.id.btnToggleCamera);
         btnDetectObject = findViewById(R.id.button3);
-        micButton = findViewById (R.id.button4);
-        //lottieAnimationView = findViewById (R.id.lottieAnimationView);
+        micButton = findViewById (R.id.lottie_animation);
 
         //TextToSpeech Initializer
         tts = new TextToSpeech(this, this);
@@ -83,10 +88,17 @@ public class Camera extends AppCompatActivity implements TextToSpeech.OnInitList
             public void onImage(CameraKitImage cameraKitImage) {
 
                 bitmap = cameraKitImage.getBitmap();
+                sendBitmap = cameraKitImage.getBitmap ();
                 bitmap = Bitmap.createScaledBitmap(bitmap, INPUT_SIZE, INPUT_SIZE, false);
+                saveImage (sendBitmap);
+                sendBitmap = Bitmap.createScaledBitmap(sendBitmap, 350, 350, false);
                 final List<Classifier.Recognition> results = classifier.recognizeImage(bitmap);
+                //sending bitmap
+                ByteArrayOutputStream _bs = new ByteArrayOutputStream();
+                sendBitmap.compress(Bitmap.CompressFormat.PNG, 80, _bs);
 
                 Intent produceResult = new Intent (getApplicationContext (), ResultVoiceOver.class);
+                produceResult.putExtra("byteArray", _bs.toByteArray());
                 produceResult.putExtra ("result", results.toString ());
                 produceResult.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 startActivity (produceResult);
@@ -107,15 +119,23 @@ public class Camera extends AppCompatActivity implements TextToSpeech.OnInitList
                 speak("Image Captured! Please wait while the image is being recognized.");
                 btnDetectObject.setVisibility (View.INVISIBLE);
                 micButton.setVisibility (View.INVISIBLE);
-                //lottieAnimationView.setVisibility (View.INVISIBLE);
+                new Handler ().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        speak("Something went Wrong!!!");
+                       recreate ();
+                    }
+                }, 10000);
             }
         });
         micButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                micButton.playAnimation ();
                 startListening();
             }
         });
+        micButton.cancelAnimation ();
         initTensorFlowAndLoadModel();
     }//End of OnCreate
 
@@ -138,6 +158,7 @@ public class Camera extends AppCompatActivity implements TextToSpeech.OnInitList
     protected void onDestroy() {
         super.onDestroy();
         tts.shutdown ();
+        cameraView.stop ();
         executor.execute(new Runnable() {
             @Override
             public void run() {
@@ -145,7 +166,7 @@ public class Camera extends AppCompatActivity implements TextToSpeech.OnInitList
             }
         });
     }
-    
+
     private void initTensorFlowAndLoadModel() {
         executor.execute(new Runnable() {
             @Override
@@ -177,7 +198,6 @@ public class Camera extends AppCompatActivity implements TextToSpeech.OnInitList
         speak("Please press back again to exit");
 
         new Handler ().postDelayed(new Runnable() {
-
             @Override
             public void run() {
                 doubleBackToExitPressedOnce=false;
@@ -312,10 +332,9 @@ public class Camera extends AppCompatActivity implements TextToSpeech.OnInitList
                 //Toast.makeText(getApplicationContext(), "Language not supported", Toast.LENGTH_SHORT).show();
                 speak ("Your Language is not supported.");
             } else {
-                speak ("Welcome! Hold the device steady and speak 'snap' to take the picture.");
+                speak ("Welcome! speak 'snap' to take the picture.");
                 btnDetectObject.setVisibility (View.VISIBLE);
                 micButton.setVisibility (View.VISIBLE);
-                //lottieAnimationView.setVisibility (View.VISIBLE);
             }
         } else {
             Toast.makeText(getApplicationContext(), "Init failed", Toast.LENGTH_SHORT).show();
@@ -324,6 +343,23 @@ public class Camera extends AppCompatActivity implements TextToSpeech.OnInitList
     }
 
     //end of TextToSpeech
+    private void saveImage(Bitmap data) {
+        File createFolder = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),"whatsmoney");
+        if(!createFolder.exists())
+            createFolder.mkdir();
+        File saveImage = new File(createFolder,"whatsmoney.jpg");
+        try {
+            OutputStream outputStream = new FileOutputStream(saveImage);
+            data.compress(Bitmap.CompressFormat.JPEG,100,outputStream);
+            outputStream.flush();
+            outputStream.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 
 }
 

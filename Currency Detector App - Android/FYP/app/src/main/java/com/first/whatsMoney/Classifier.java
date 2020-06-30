@@ -1,4 +1,4 @@
-package com.first.fyp;
+package com.first.whatsMoney;
 
 import android.graphics.Bitmap;
 
